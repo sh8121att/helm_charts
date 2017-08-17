@@ -19,7 +19,7 @@ limitations under the License.
 {{- $port := index . 2 -}}
 {{- $context := index . 3 -}}
 {{- $endpointMap := index $context.Values.endpoints $type -}}
-{{- set $context "hostmap" dict | trunc 0 -}}
+{{- set $context "hostmap" dict -}}
 {{- if $context.Values.endpoints.fqdn -}}
 {{- set $context.hostmap "fqdn" $context.Values.endpoints.fqdn | trunc 0 -}}
 {{- else -}}
