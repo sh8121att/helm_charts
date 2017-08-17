@@ -21,7 +21,7 @@ kind: StatefulSet
 metadata:
   name: maas-region
 spec:
-  serviceName: "{{ .Values.ui_service_name }}"
+  serviceName: "{{ .Values.endpoints.maas_region_ui.name }}"
   template:
     metadata:
       labels:
@@ -29,7 +29,7 @@ spec:
       annotations:
     spec:
       nodeSelector:
-        {{ .Values.labels.node_selector_key }}: {{ .Values.labels.node_selector_value }}
+        {{ .Values.labels.region.node_selector_key }}: {{ .Values.labels.region.node_selector_value }}
       initContainers:
 {{ tuple $envAll $dependencies $initMounts | include "helm-toolkit.snippets.kubernetes_entrypoint_init_container" | indent 6 }}
       - name: init-data
