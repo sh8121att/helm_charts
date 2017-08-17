@@ -23,7 +23,7 @@ limitations under the License.
 {{- if $context.Values.endpoints.fqdn -}}
 {{- set $context.hostmap "fqdn" $context.Values.endpoints.fqdn | trunc 0 -}}
 {{- else -}}
-{{- default "svc.cluster.local" $context.Release.Namespace | set $context.hostmap "fqdn" | trunc 0 -}}
+{{- default "svc.cluster.local" $context.Release.Namespace | set $context.hostmap "fqdn" -}}
 {{- end -}}
 {{- with $endpointMap -}}
 {{- $endpointScheme := .scheme -}}
