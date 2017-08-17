@@ -1,0 +1,148 @@
+# Copyright 2017 The Openstack-Helm Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Default values for maas.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+credentials:
+  admin_username: admin
+  admin_password: admin
+  admin_email: support@nowhere.com
+  secret:
+    namespace: maas
+    name: maas-api-key
+
+database:
+  db_name: maasdb
+  db_user: maas
+  db_password: password
+
+dependencies:
+  maas_region:
+    services:
+    - service: postgresql
+      endpoint: internal
+  maas_rack:
+    services:
+    - service: maas-region-ui
+      endpoint: internal
+    pods:
+    - maas-region-0
+    jobs:
+    - region-import-resources
+  import_resources:
+    pods:
+    - maas-region-0
+  export_api_key:
+    pods:
+    - maas-region-0
+    services:
+    - service: maas-region-ui
+      endpoint: internal
+
+mounts:
+  export_api_key: null
+  import_resources: null
+  maas_region: null
+  maas_rack: null
+
+endpoints:
+  maas-region-ui:
+    name: maas-region-ui
+    hosts:
+      default: maas-region-ui
+    port:
+      api:
+        default: 5240
+    path:
+      default: /MAAS/2.0
+    scheme:
+      default: http
+  maas_db: 
+    name: postgresql
+    hosts:
+      default: postgresql
+    port:
+      db:
+        default: 5432
+
+images:
+  maas_region: quay.io/attcomdev/maas-region:2.2.0
+  maas_rack: quay.io/attcomdev/maas-rack:2.2.0
+  dep_check: quay.io/stackanetes/kubernetes-entrypoint:v0.1.1
+  pull_policy: Always
+
+jobs:
+  import_boot_resources:
+    retry_timer: 10
+    #default timeout: 15 minutes
+    timeout: 900
+
+labels:
+  node_selector_key: openstack-control-plane
+  node_selector_value: enabled
+
+network:
+  proxy:
+    node_port:
+      enabled: true
+      port: 31800
+  gui:
+    node_port:
+      enabled: true
+      port: 31900
+  port:
+    region_container: 80
+    service_gui: 80
+    service_gui_target: 80
+    service_proxy: 8000
+    service_proxy_target: 8000
+    db_service: 5432
+    db_service_target: 5432
+
+conf:
+  maas:
+    url:
+    proxy:
+      server:
+      enabled:
+    ntp:
+      servers:
+      external_only:
+    dns:
+      dnssec_required: 'no'
+      upstream_servers:
+
+ui_service_name: maas-region-ui
+db_service_name: db-service
+secret: 3858f62230ac3c915f300c664312c63f
+bootdata_url: http://drydock/api/v1.0/bootdata/
+
+resources:
+  enabled: false
+  maas_rack_controller:
+    limits:
+      memory: "128Mi"
+      cpu: "500m"
+    requests:
+      memory: "128Mi"
+      cpu: "500m"
+  maas_region:
+    limits:
+      memory: "128Mi"
+      cpu: "500m"
+    requests:
+      memory: "128Mi"
+      cpu: "500m"

@@ -1,0 +1,50 @@
+{{- $envAll := . }}
+{{- $dependencies := .Values.dependencies.export_api_key }}
+{{- $initMounts := .Values.mounts.export_api_key }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: export-api-key
+spec:
+  template:
+    metadata:
+      annotations:
+    spec:
+      restartPolicy: OnFailure
+      nodeSelector:
+        {{ .Values.labels.node_selector_key }}: {{ .Values.labels.node_selector_value }}
+      initContainers:
+{{ tuple $envAll $dependencies $initMounts | include "helm-toolkit.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
+      containers:
+        - name: exporter
+          image: {{ .Values.images.maas_region }}
+          imagePullPolicy: {{ .Values.images.pull_policy }}
+          command:
+            - bash
+            - /tmp/export-api-key.sh
+          readinessProbe:
+            exec:
+              command:
+                - bash
+                - /tmp/job-readiness.sh
+            initialDelaySeconds: 60
+          volumeMounts:
+            - name: maas-bin
+              mountPath: /tmp/export-api-key.sh
+              subPath: export-api-key.sh
+            - name: maas-bin
+              mountPath: /tmp/job-readiness.sh
+              subPath: job-readiness.sh
+            - name: maas-etc
+              mountPath: /etc/bind/named.conf.options
+              subPath: named.conf.options
+            - name: maas-etc
+              mountPath: /etc/maas/regiond.conf
+              subPath: regiond.conf
+      volumes:
+        - name: maas-bin
+          configMap:
+            name: maas-bin
+        - name: maas-etc
+          configMap:
+            name: maas-etc

@@ -1,0 +1,77 @@
+
+# Copyright 2017 The Openstack-Helm Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+{{- $envAll := . -}}
+---
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: drydock
+spec:
+  replicas: {{ .Values.replicas.drydock }}
+{{ tuple $envAll | include "helm-toolkit.snippets.kubernetes_upgrades_deployment" | indent 2 }}
+  template:
+    metadata:
+      labels:
+{{ tuple $envAll "drydock" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+      annotations:
+        configmap-bin-hash: {{ tuple "configmap-bin.yaml" . | include "helm-toolkit.utils.hash" }}
+        configmap-etc-hash: {{ tuple "configmap-etc.yaml" . | include "helm-toolkit.utils.hash" }}
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: drydock
+          env:
+            - name: 'MAAS_API_KEY'
+              valueFrom:
+                secretKeyRef:
+                  name: 'maas-api-key'
+                  key: 'token'
+          image: {{ .Values.images.drydock }}
+          imagePullPolicy: {{ .Values.images.pull_policy }}
+{{ tuple $envAll $envAll.Values.pod.resources.api | include "helm-toolkit.snippets.kubernetes_resources" | indent 10 }}
+          ports:
+            - name: drydock-api
+              containerPort: {{ .Values.network.drydock.port }}
+          volumeMounts:
+            - name: etc-drydock
+              mountPath: /etc/drydock
+            - name: drydock-etc
+              subPath: drydock.conf
+              mountPath: /etc/drydock/drydock.conf
+              readOnly: true
+            - name: drydock-etc
+              subPath: api-paste.ini
+              mountPath: /etc/drydock/api-paste.ini
+              readOnly: true
+            - name: drydock-etc
+              subPath: policy.yaml
+              mountPath: /etc/drydock/policy.yaml
+              readOnly: true
+            - name: drydock-bootdata
+              mountPath: /etc/drydock/bootdata
+              readOnly: true
+      volumes:
+        - name: etc-drydock
+          emptyDir: {}
+        - name: drydock-etc
+          configMap:
+            name: drydock-etc
+            defaultMode: 0444
+        - name: drydock-bootdata
+          configMap:
+            name: promenade-join-sh
+            defaultMode: 0555
+...
