@@ -14,24 +14,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+{{- if empty .Values.conf.maas.url.maas_url -}}
+{{- tuple "maas_region_ui" "default" "region_ui" . | include "helm-toolkit.endpoints.keystone_endpoint_uri_lookup" | set .Values.conf.maas.url "maas_url" | quote | trunc 0 -}}
+{{- end -}}
 set -ex
 
 # show env
 env > /tmp/env
 
-echo "register-rack-controller URL: "{{ tuple "maas_region_ui" "node" "region_ui" . | include "helm-toolkit.endpoints.keystone_endpoint_uri_lookup" }}
+echo "register-rack-controller URL: "{{ .Values.conf.maas.url.maas_url }}
 
 # note the secret must be a valid hex value
 
 # register forever
 while [ 1 ];
 do
-  if maas-rack register --url={{ tuple "maas_region_ui" "node" "region_ui" . | include "helm-toolkit.endpoints.keystone_endpoint_uri_lookup" }} --secret={{ .Values.secrets.maas_region.value | quote }};
+  if maas-rack register --url={{ .Values.conf.maas.url.maas_url }} --secret={{ .Values.secrets.maas_region.value | quote }};
   then
     echo "Successfully registered with MaaS Region Controller"
   break
   else
-    echo "Unable to register with {{ tuple "maas_region_ui" "node" "region_ui" . | include "helm-toolkit.endpoints.keystone_endpoint_uri_lookup" }}... will try again"
+    echo "Unable to register with {{ .Values.conf.maas.url.maas_url }}... will try again"
         sleep 10
   fi;
 
