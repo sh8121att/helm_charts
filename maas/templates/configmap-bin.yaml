@@ -11,21 +11,23 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: maas-bin
 data:
-  start.sh: |
-{{ tuple "bin/_start.sh.tpl" . | include "utils.template" | indent 4 }}
-  export-api-key.sh: |
-{{ tuple "bin/_export-api-key.sh.tpl" . | include "utils.template" | indent 4 }}
-  maas-region-controller.postinst: |
-{{ tuple "bin/_maas-region-controller.postinst.tpl" . | include "utils.template" | indent 4 }}
+  db-init.sh: |+
+{{ tuple "bin/_db-init.sh.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
+  db-sync.sh: |+
+{{ tuple "bin/_db-sync.sh.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
+  bootstrap-admin-user.sh: |
+{{ tuple "bin/_bootstrap-admin-user.sh.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
   import-boot-resources.sh: |
-{{ tuple "bin/_import-boot-resources.sh.tpl" . | include "utils.template" | indent 4 }}
+{{ tuple "bin/_import-boot-resources.sh.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
   job-readiness.sh: |
-{{ tuple "bin/_job-readiness.sh.tpl" . | include "utils.template" | indent 4 }}
+{{ tuple "bin/_job-readiness.sh.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
   register-rack-controller.sh: |
-{{ tuple "bin/_register-rack-controller.sh.tpl" . | include "utils.template" | indent 4 }}
+{{ tuple "bin/_register-rack-controller.sh.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
+  export-api-key.sh: |
+{{ tuple "bin/_export-api-key.sh.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}

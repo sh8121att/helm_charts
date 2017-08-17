@@ -16,73 +16,53 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-credentials:
-  admin_username: admin
-  admin_password: admin
-  admin_email: support@nowhere.com
-  secret:
-    namespace: maas
-    name: maas-api-key
-
-database:
-  db_name: maasdb
-  db_user: maas
-  db_password: password
-
 dependencies:
-  maas_region:
-    services:
-    - service: postgresql
-      endpoint: internal
-  maas_rack:
-    services:
-    - service: maas-region-ui
-      endpoint: internal
-    pods:
-    - maas-region-0
+  rack_controller:
     jobs:
-    - region-import-resources
+    - maas-db-sync
+    service:
+    - maas-region-ui
+  region_controller:
+    jobs:
+    - maas-db-sync
+    - maas-bootstrap-admin-user
+    service:
+    - postgresql
+  db_init:
+    service:
+    - postgresql
+  db_sync:
+    jobs:
+    - maas-db-init
+  bootstrap_admin_user:
+    jobs:
+    - maas-db-sync
+    service:
+    - maas-region-ui
+    - postgresql
   import_resources:
-    pods:
-    - maas-region-0
+    jobs:
+    - maas-db-sync
+    service:
+    - maas-region-ui
+    - postgresql
   export_api_key:
-    pods:
-    - maas-region-0
-    services:
-    - service: maas-region-ui
-      endpoint: internal
+    jobs:
+    - maas-db-sync
+    service:
+    - maas-region-ui
+    - postgresql
 
-mounts:
-  export_api_key: null
-  import_resources: null
-  maas_region: null
-  maas_rack: null
-
-endpoints:
-  maas-region-ui:
-    name: maas-region-ui
-    hosts:
-      default: maas-region-ui
-    port:
-      api:
-        default: 5240
-    path:
-      default: /MAAS/2.0
-    scheme:
-      default: http
-  maas_db: 
-    name: postgresql
-    hosts:
-      default: postgresql
-    port:
-      db:
-        default: 5432
 
 images:
-  maas_region: quay.io/attcomdev/maas-region:2.2.0
-  maas_rack: quay.io/attcomdev/maas-rack:2.2.0
-  dep_check: quay.io/stackanetes/kubernetes-entrypoint:v0.1.1
-  pull_policy: Always
+  db_init: docker.io/postgres:9.5
+  db_sync: quay.io/larryrensing/maas-region:2.2.1
+  maas_rack: quay.io/larryrensing/maas-rack:2.2.1
+  maas_region: quay.io/larryrensing/maas-region:2.2.1
+  bootstrap: quay.io/larryrensing/maas-region:2.2.1
+  export_api_key: quay.io/larryrensing/maas-region:2.2.1
+  dep_check: docker.io/kolla/ubuntu-source-kubernetes-entrypoint:4.0.0
+  pull_policy: IfNotPresent
 
 jobs:
   import_boot_resources:
@@ -91,8 +71,12 @@ jobs:
     timeout: 900
 
 labels:
-  node_selector_key: openstack-control-plane
-  node_selector_value: enabled
+  rack:
+    node_selector_key: openstack-control-plane
+    node_selector_value: enabled
+  region:
+    node_selector_key: openstack-control-plane
+    node_selector_value: enabled
 
 network:
   proxy:
@@ -113,36 +97,134 @@ network:
     db_service_target: 5432
 
 conf:
+  bind:
+    override:
+    append:
+  curtin:
+    override:
+    append:
   maas:
+    override:
+    append:
     url:
-    proxy:
-      server:
-      enabled:
-    ntp:
-      servers:
-      external_only:
-    dns:
-      dnssec_required: 'no'
-      upstream_servers:
+    database:
+      database_name: maasdb
+      database_user: maas
+      database_password: password
+    credentials:
+      admin_username: admin
+      admin_password: admin
+      admin_email: support@nowhere.com
+      secret:
+        namespace: maas
+        name: maas-api-key
 
-ui_service_name: maas-region-ui
-db_service_name: db-service
-secret: 3858f62230ac3c915f300c664312c63f
-bootdata_url: http://drydock/api/v1.0/bootdata/
-
-resources:
-  enabled: false
-  maas_rack_controller:
-    limits:
-      memory: "128Mi"
-      cpu: "500m"
-    requests:
-      memory: "128Mi"
-      cpu: "500m"
+secrets:
+  maas_db:
+    admin: maas-db-admin
+    user: maas-db-user
   maas_region:
-    limits:
-      memory: "128Mi"
-      cpu: "500m"
-    requests:
-      memory: "128Mi"
-      cpu: "500m"
+    name: maas-region-secret
+    value: 3858f62230ac3c915f300c664312c63f
+
+pod:
+  affinity:
+    anti:
+      type:
+        default: preferredDuringSchedulingIgnoredDuringExecution
+      topologyKey:
+        default: kubernetes.io/hostname
+  mounts:
+    maas_rack:
+      init_container: null
+      maas_rack:
+    maas_region:
+      init_container: null
+      maas_region:
+    export_api_key:
+      init_container: null
+      export_api_key:
+  replicas:
+    rack: 1
+    region: 1
+  resources:
+    enabled: false
+    maas_rack:
+      limits:
+        memory: "128Mi"
+        cpu: "500m"
+      requests:
+        memory: "128Mi"
+        cpu: "500m"
+    maas_region:
+      limits:
+        memory: "128Mi"
+        cpu: "500m"
+      requests:
+        memory: "128Mi"
+        cpu: "500m"
+    jobs:
+      db_init:
+        requests:
+          memory: "128Mi"
+          cpu: "100m"
+        limits:
+          memory: "1024Mi"
+          cpu: "2000m"
+      db_sync:
+        requests:
+          memory: "128Mi"
+          cpu: "100m"
+        limits:
+          memory: "1024Mi"
+          cpu: "2000m"
+      bootstrap_admin_user:
+        requests:
+          memory: "128Mi"
+          cpu: "100m"
+        limits:
+          memory: "1024Mi"
+          cpu: "2000m"
+      import_resources:
+        requests:
+          memory: "128Mi"
+          cpu: "100m"
+        limits:
+          memory: "1024Mi"
+          cpu: "2000m"
+      export_api_key:
+        requests:
+          memory: "128Mi"
+          cpu: "100m"
+        limits:
+          memory: "1024Mi"
+          cpu: "2000m"
+
+endpoints:
+  maas_db:
+    auth:
+      admin:
+        username: postgres
+        password: password
+      user:
+        username: maas
+        password: password
+    path: maasdb
+    hosts:
+      default: postgresql
+    port:
+      postgresql:
+        default: 5432
+  maas_region_ui:
+    name: maas-region-ui
+    hosts:
+      default: maas-region-ui
+      public: maas
+    path:
+      default: /MAAS
+    scheme:
+      default: 'http'
+    port:
+      region_ui:
+        default: 80
+        public: 80

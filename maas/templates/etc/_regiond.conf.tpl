@@ -1,9 +1,33 @@
-database_host: {{ include "utils.postgresql_host" . }}
-database_name: {{ .Values.database.db_name }}
-database_pass: {{ .Values.database.db_password }}
-database_user: {{ .Values.database.db_user }}
-{{- if .Values.conf.maas.url }}
-maas_url: {{ .Values.conf.maas.url }}
-{{- else }}
-maas_url: http://{{ .Values.ui_service_name }}.{{ .Release.Namespace }}:80/MAAS
-{{ end }}
+# Copyright 2017 The Openstack-Helm Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+{{ include "maas.conf.maas_values_skeleton" .Values.conf.maas | trunc 0 }}
+{{ include "maas.conf.maas" .Values.conf.maas }}
+
+{{- define "maas.conf.maas_values_skeleton" -}}
+
+{{- if not .database -}}{{- set . "database" dict -}}{{- end -}}
+{{- if not .url -}}{{- set . "url" dict -}}{{- end -}}
+{{- end -}}
+
+
+{{- define "maas.conf.maas" -}}
+
+database_host: {{ .database.database_host }}
+database_name: {{ .database.database_name }}
+database_pass: {{ .database.database_password }}
+database_user: {{ .database.database_user }}
+maas_url: {{ .url.maas_url }}
+
+{{- end -}}

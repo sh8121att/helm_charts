@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Copyright 2017 The Openstack-Helm Authors.
 #
@@ -20,30 +20,25 @@ function check_for_download {
 
     TIMEOUT={{ .Values.jobs.import_boot_resources.timeout }}
     while [[ ${TIMEOUT} -gt 0 ]]; do
-        if maas {{ .Values.credentials.admin_username }} boot-resources read | grep 'Synced'
+        if maas {{ .Values.conf.maas.credentials.admin_username }} boot-resources is-importing | grep -q 'true';
         then
-            echo 'Boot resources found'
-            exit 0
-        else
-            echo 'Did not find boot resources.  Will try again'
+            echo -e '\nBoot resources currently importing\n'
             let TIMEOUT-={{ .Values.jobs.import_boot_resources.retry_timer }}
-            sleep {{ .Values.jobs.import_boot_resources.retry_timer }}        
+            sleep {{ .Values.jobs.import_boot_resources.retry_timer }}
+        else
+            echo 'Boot resources have completed importing'
+            exit 0
         fi
     done
     exit 1
+
 }
 
-KEY=$(maas-region apikey --username={{ .Values.credentials.admin_username }})
-maas login {{ .Values.credentials.admin_username }} http://{{ .Values.ui_service_name }}.{{ .Release.Namespace }}/MAAS/ $KEY
+KEY=$(maas-region apikey --username={{ .Values.conf.maas.credentials.admin_username }})
+maas login {{ .Values.conf.maas.credentials.admin_username }} {{ tuple "maas_region_ui" "default" "region_ui" . | include "helm-toolkit.endpoints.keystone_endpoint_uri_lookup" }} $KEY
 
 # make call to import images
-maas {{ .Values.credentials.admin_username }} maas set-config name=enable_http_proxy value={{ .Values.conf.maas.proxy.enabled }}
-maas {{ .Values.credentials.admin_username }} maas set-config name=http_proxy value={{ .Values.conf.maas.proxy.server }}
-maas {{ .Values.credentials.admin_username }} maas set-config name=ntp_servers value={{ .Values.conf.maas.ntp.servers | quote }}
-maas {{ .Values.credentials.admin_username }} maas set-config name=ntp_external_only value={{ .Values.conf.maas.ntp.external_only }}
-maas {{ .Values.credentials.admin_username }} maas set-config name=dnssec_validation value={{ .Values.conf.maas.dns.dnssec_required }}
-maas {{ .Values.credentials.admin_username }} maas set-config name=upstream_dns value={{ .Values.conf.maas.dns.upstream_servers | quote }}
-maas {{ .Values.credentials.admin_username }} boot-resources import
+maas {{ .Values.conf.maas.credentials.admin_username }} boot-resources import
 # see if we can find > 0 images
 sleep {{ .Values.jobs.import_boot_resources.retry_timer }}
 check_for_download

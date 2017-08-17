@@ -19,26 +19,20 @@ set -ex
 # show env
 env > /tmp/env
 
-{{- if .Values.conf.maas.url }}
-REGION_URL={{ .Values.conf.maas.url }}
-{{- else }}
-REGION_URL=http://{{ .Values.ui_service_name }}.{{ .Release.Namespace }}/MAAS
-{{- end }}
-
-echo "register-rack-controller URL: $REGION_URL"
+echo "register-rack-controller URL: "{{ tuple "maas_region_ui" "default" "region_ui" . | include "helm-toolkit.endpoints.keystone_endpoint_uri_lookup" }}
 
 # note the secret must be a valid hex value
 
 # register forever
 while [ 1 ];
 do
-  if maas-rack register --url=$REGION_URL --secret={{ .Values.secret | quote }};
+  if maas-rack register --url={{ tuple "maas_region_ui" "default" "region_ui" . | include "helm-toolkit.endpoints.keystone_endpoint_uri_lookup" }} --secret={{ .Values.secret | quote }};
   then
     echo "Successfully registered with MaaS Region Controller"
   break
   else
-    echo "Unable to register with $REGION_URL will try again"
-		sleep 10
+    echo "Unable to register with {{ tuple "maas_region_ui" "default" "region_ui" . | include "helm-toolkit.endpoints.keystone_endpoint_uri_lookup" }}... will try again"
+        sleep 10
   fi;
 
 done;

@@ -13,17 +13,17 @@
 # limitations under the License.
 
 {{- $envAll := . }}
-{{- $dependencies := .Values.dependencies.import_resources }}
+{{- $dependencies := .Values.dependencies.db_sync }}
 ---
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: maas-import-resources
+  name: maas-db-sync
 spec:
   template:
     metadata:
       labels:
-{{ tuple $envAll "maas" "import-resources" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+{{ tuple $envAll "maas" "db-sync" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
     spec:
       restartPolicy: OnFailure
       nodeSelector:
@@ -31,40 +31,27 @@ spec:
       initContainers:
 {{ tuple $envAll $dependencies "[]" | include "helm-toolkit.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
       containers:
-        - name: region-import-resources
-          image: {{ .Values.images.maas_region }}
+        - name: maas-db-sync
+          image: {{ .Values.images.db_sync }}
           imagePullPolicy: {{ .Values.images.pull_policy }}
-{{ tuple $envAll $envAll.Values.pod.resources.jobs.import_resources | include "helm-toolkit.snippets.kubernetes_resources" | indent 10 }}
+{{ tuple $envAll $envAll.Values.pod.resources.jobs.db_sync | include "helm-toolkit.snippets.kubernetes_resources" | indent 10 }}
           command:
-            - /tmp/import-boot-resources.sh
-          readinessProbe:
-            exec:
-              command:
-                - /tmp/job-readiness.sh
-            initialDelaySeconds: 60
+            - /tmp/db-sync.sh
           volumeMounts:
-            - name: maas-bin
-              mountPath: /tmp/import-boot-resources.sh
-              subPath: import-boot-resources.sh
-              readOnly: true
-            - name: maas-bin
-              mountPath: /tmp/job-readiness.sh
-              subPath: job-readiness.sh
-              readOnly: true
-            - name: maas-etc
-              mountPath: /etc/bind/named.conf.options
-              subPath: named.conf.options
-              readOnly: true
             - name: maas-etc
               mountPath: /etc/maas/regiond.conf
               subPath: regiond.conf
               readOnly: true
+            - name: maas-bin
+              mountPath: /tmp/db-sync.sh
+              subPath: db-sync.sh
+              readOnly: true
       volumes:
-        - name: maas-bin
-          configMap:
-            name: maas-bin
-            defaultMode: 0555
         - name: maas-etc
           configMap:
             name: maas-etc
             defaultMode: 0444
+        - name: maas-bin
+          configMap:
+            name: maas-bin
+            defaultMode: 0555

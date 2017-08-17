@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Copyright 2017 The Openstack-Helm Authors.
 #
@@ -24,11 +24,11 @@ function post_secret {
         --header="Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
         --method=POST \
         --body-file=/tmp/secret.json \
-        https://kubernetes.default.svc.cluster.local/api/v1/namespaces/{{ .Values.credentials.secret.namespace }}/secrets \
+        https://kubernetes.default.svc.cluster.local/api/v1/namespaces/{{ .Values.conf.maas.credentials.secret.namespace }}/secrets \
         2>&1 | grep -E "HTTP/1.1 (201 Created|409 Conflict)"
 }
 
-KEY=$(maas-region apikey --username={{ .Values.credentials.admin_username }})
+KEY=$(maas-region apikey --username={{ .Values.conf.maas.credentials.admin_username }})
 
 if [ "x$KEY" != "x" ]; then
     ENCODED_KEY=$(echo -n $KEY | base64 -w 0)
@@ -38,7 +38,7 @@ if [ "x$KEY" != "x" ]; then
   "kind": "Secret",
   "type": "Opaque",
   "metadata": {
-    "name": "{{ .Values.credentials.secret.name }}"
+    "name": "{{ .Values.conf.maas.credentials.secret.name }}"
   },
   "data": {
     "token": "$ENCODED_KEY"

@@ -13,17 +13,17 @@
 # limitations under the License.
 
 {{- $envAll := . }}
-{{- $dependencies := .Values.dependencies.import_resources }}
+{{- $dependencies := .Values.dependencies.bootstrap_admin_user }}
 ---
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: maas-import-resources
+  name: maas-bootstrap-admin-user
 spec:
   template:
     metadata:
       labels:
-{{ tuple $envAll "maas" "import-resources" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+{{ tuple $envAll "maas" "bootstrap-admin-user" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
     spec:
       restartPolicy: OnFailure
       nodeSelector:
@@ -31,29 +31,17 @@ spec:
       initContainers:
 {{ tuple $envAll $dependencies "[]" | include "helm-toolkit.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
       containers:
-        - name: region-import-resources
-          image: {{ .Values.images.maas_region }}
+        - name: maas-bootstrap-admin-user
+          image: {{ .Values.images.bootstrap }}
           imagePullPolicy: {{ .Values.images.pull_policy }}
-{{ tuple $envAll $envAll.Values.pod.resources.jobs.import_resources | include "helm-toolkit.snippets.kubernetes_resources" | indent 10 }}
+{{ tuple $envAll $envAll.Values.pod.resources.jobs.bootstrap_admin_user | include "helm-toolkit.snippets.kubernetes_resources" | indent 10 }}
+          env:
           command:
-            - /tmp/import-boot-resources.sh
-          readinessProbe:
-            exec:
-              command:
-                - /tmp/job-readiness.sh
-            initialDelaySeconds: 60
+            - /tmp/bootstrap-admin-user.sh
           volumeMounts:
             - name: maas-bin
-              mountPath: /tmp/import-boot-resources.sh
-              subPath: import-boot-resources.sh
-              readOnly: true
-            - name: maas-bin
-              mountPath: /tmp/job-readiness.sh
-              subPath: job-readiness.sh
-              readOnly: true
-            - name: maas-etc
-              mountPath: /etc/bind/named.conf.options
-              subPath: named.conf.options
+              mountPath: /tmp/bootstrap-admin-user.sh
+              subPath: bootstrap-admin-user.sh
               readOnly: true
             - name: maas-etc
               mountPath: /etc/maas/regiond.conf

@@ -11,47 +11,52 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-{{- $envAll := . }}
-{{- $dependencies := .Values.dependencies.maas_rack }}
-{{- $initMounts := .Values.mounts.maas_rack }}
 
-apiVersion: extensions/v1beta1
+{{- $envAll := . }}
+{{- $dependencies := .Values.dependencies.rack_controller }}
+{{- $mounts_maas_rack := .Values.pod.mounts.maas_rack }}
+{{- $mounts_maas_rack_init := .Values.pod.mounts.maas_rack.init_container }}
+---
+apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
   name: maas-rack
 spec:
+  replicas: {{ .Values.pod.replicas.rack }}
   template:
     metadata:
       labels:
-        app: maas-rack-controller
+{{ tuple $envAll "maas" "rack" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+      annotations:
+        configmap-bin-hash: {{ tuple "configmap-bin.yaml" . | include "helm-toolkit.utils.hash" }}
+        configmap-etc-hash: {{ tuple "configmap-etc.yaml" . | include "helm-toolkit.utils.hash" }}
     spec:
+      affinity:
+{{ tuple $envAll "maas" "rack" | include "helm-toolkit.snippets.kubernetes_pod_anti_affinity" | indent 8 }}
       nodeSelector:
-        {{ .Values.labels.node_selector_key }}: {{ .Values.labels.node_selector_value }}
-      hostNetwork: true
-      dnsPolicy: ClusterFirstWithHostNet
+        {{ .Values.labels.rack.node_selector_key }}: {{ .Values.labels.rack.node_selector_value }}
       initContainers:
-{{ tuple $envAll $dependencies $initMounts | include "helm-toolkit.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
+{{ tuple $envAll $dependencies $mounts_maas_rack_init | include "helm-toolkit.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
+      hostNetwork: true
+      dnsPolicy: ClusterFirst
+      initContainers:
+{{ tuple $envAll $dependencies "[]" | include "helm-toolkit.snippets.kubernetes_entrypoint_init_container" | indent 8 }}
       containers:
       - name: maas-rack
         image: {{ .Values.images.maas_rack }}
         imagePullPolicy: {{ .Values.images.pull_policy }}
-        {{- if .Values.resources.enabled }}
-        resources:
-          limits:
-            cpu: {{ .Values.resources.maas_rack_controller.limits.cpu | quote }}
-            memory: {{ .Values.resources.maas_rack_controller.limits.memory | quote }}
-          requests:
-            cpu: {{ .Values.resources.maas_rack_controller.requests.cpu | quote }}
-            memory: {{ .Values.resources.maas_rack_controller.requests.memory | quote }}
-        {{- end }}
+{{ tuple $envAll $envAll.Values.pod.resources.maas_rack | include "helm-toolkit.snippets.kubernetes_resources" | indent 10 }}
         securityContext:
           privileged: true
         volumeMounts:
-        - name: registerrackcontrollersh
+        - name: maas-bin
           mountPath: "/usr/local/bin/register-rack-controller.sh"
           subPath: "register-rack-controller.sh"
+          readOnly: true
+{{- if $mounts_maas_rack.volumeMounts }}{{ toYaml $mounts_maas_rack.volumeMounts | indent 12 }}{{ end }}
       volumes:
-        - name: registerrackcontrollersh
+        - name: maas-bin
           configMap:
             name: maas-bin
-            defaultMode: 0511
+            defaultMode: 0555
+{{- if $mounts_maas_rack.volumes }}{{ toYaml $mounts_maas_rack.volumes | indent 8 }}{{ end }}
