@@ -14,7 +14,7 @@
 
 {{- $envAll := . }}
 {{- $dependencies := .Values.dependencies.mass_region }}
-{{- $initMounts := .Values.mounts.maas_region }}
+{{- $initMounts := .Values.pod.mounts.maas_region }}
 
 apiVersion: apps/v1beta1
 kind: StatefulSet
