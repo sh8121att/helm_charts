@@ -19,11 +19,11 @@ limitations under the License.
 {{- $port := index . 2 -}}
 {{- $context := index . 3 -}}
 {{- $endpointMap := index $context.Values.endpoints $type -}}
-{{- set $context "hostmap" dict -}}
+{{- set $context "hostmap" dict | trunc 0 -}}
 {{- if $context.Values.endpoints.fqdn -}}
-{{- set $context.hostmap "fqdn" $context.Values.endpoints.fqdn -}}
+{{- set $context.hostmap "fqdn" $context.Values.endpoints.fqdn | trunc 0 -}}
 {{- else -}}
-{{- default "svc.cluster.local" $context.Release.Namespace | set $context.hostmap "fqdn" -}}
+{{- default "svc.cluster.local" $context.Release.Namespace | set $context.hostmap "fqdn" | trunc 0 -}}
 {{- end -}}
 {{- with $endpointMap -}}
 {{- $endpointScheme := .scheme -}}
