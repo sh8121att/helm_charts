@@ -246,9 +246,9 @@ endpoints:
       default: /MAAS
     scheme:
       default: 'http'
-    host_fqdn_override:
-      default: null
     port:
       region_ui:
         default: 80
         public: 80
+    host_fqdn_override:
+      default: null
