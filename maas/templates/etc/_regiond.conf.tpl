@@ -16,9 +16,12 @@
 {{ include "maas.conf.maas" .Values.conf.maas }}
 
 {{- define "maas.conf.maas_values_skeleton" -}}
-
 {{- if not .database -}}{{- set . "database" dict -}}{{- end -}}
 {{- if not .url -}}{{- set . "url" dict -}}{{- end -}}
+{{- end -}}
+
+{{- if empty .Values.conf.maas.url.maas_url -}}
+{{- tuple "maas_region_ui" "default" "region_ui" . | include "helm-toolkit.endpoints.keystone_endpoint_uri_lookup" | set .Values.conf.maas.url "maas_url" | quote | trunc 0 -}}
 {{- end -}}
 
 

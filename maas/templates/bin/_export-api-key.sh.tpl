@@ -24,11 +24,11 @@ function post_secret {
         --header="Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
         --method=POST \
         --body-file=/tmp/secret.json \
-        https://kubernetes.default.svc.cluster.local/api/v1/namespaces/{{ .Values.conf.maas.credentials.secret.namespace }}/secrets \
+        https://kubernetes.default.svc.cluster.local/api/v1/namespaces/${SECRET_NAMESPACE}/secrets \
         2>&1 | grep -E "HTTP/1.1 (201 Created|409 Conflict)"
 }
 
-KEY=$(maas-region apikey --username={{ .Values.conf.maas.credentials.admin_username }})
+KEY=$(maas-region apikey --username=${ADMIN_USERNAME})
 
 if [ "x$KEY" != "x" ]; then
     ENCODED_KEY=$(echo -n $KEY | base64 -w 0)
@@ -38,7 +38,7 @@ if [ "x$KEY" != "x" ]; then
   "kind": "Secret",
   "type": "Opaque",
   "metadata": {
-    "name": "{{ .Values.conf.maas.credentials.secret.name }}"
+    "name": "${SECRET_NAME}"
   },
   "data": {
     "token": "$ENCODED_KEY"

@@ -27,10 +27,10 @@ dependencies:
     - maas-db-sync
     - maas-bootstrap-admin-user
     service:
-    - postgresql
+    - maas_db
   db_init:
     service:
-    - postgresql
+    - maas_db
   db_sync:
     jobs:
     - maas-db-init
@@ -39,19 +39,19 @@ dependencies:
     - maas-db-sync
     service:
     - maas-region-ui
-    - postgresql
+    - maas_db
   import_resources:
     jobs:
     - maas-db-sync
     service:
     - maas-region-ui
-    - postgresql
+    - maas_db
   export_api_key:
     jobs:
     - maas-db-sync
     service:
     - maas-region-ui
-    - postgresql
+    - maas_db
 
 
 images:
@@ -72,10 +72,10 @@ jobs:
 
 labels:
   rack:
-    node_selector_key: openstack-control-plane
+    node_selector_key: ucp-control-plane
     node_selector_value: enabled
   region:
-    node_selector_key: openstack-control-plane
+    node_selector_key: ucp-control-plane
     node_selector_value: enabled
 
 network:
@@ -107,6 +107,26 @@ conf:
     override:
     append:
     url:
+      maas_url: null
+    ntp:
+      # Use external only points region and rack serves and deployed nodes directly
+      # at external NTP servers. Otherwise we have nodes -> rack -> region -> external
+      use_external_only: 'false'
+      ntp_servers: null
+    dns:
+      require_dnssec: 'false'
+      # These are upstream servers
+      dns_servers: null
+    proxy:
+      # If proxy_enabled is true and proxy_serer is null, then nodes will use
+      # MAAS region server as a proxy for Apt and region server will connect directly
+      # to repos
+      # If proxy_enabled is false, regin server and all ndoes will connect directly to
+      # pkg repos
+      # If proxy_enabled is true and proxy_server is set, then region server and all nodes
+      # will use the specified proxy_server to connect to pkg repos
+      proxy_enabled: 'false'
+      proxy_server: null
     database:
       database_name: maasdb
       database_user: maas

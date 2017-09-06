@@ -14,4 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-maas-region apikey --username={{ .Values.conf.maas.credentials.admin_username }} || exit 1
+set -ex
+
+maas-region apikey --username=${ADMIN_USERNAME} || exit 1

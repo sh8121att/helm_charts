@@ -16,4 +16,4 @@
 
 set -ex
 
-maas-region createadmin --username={{ .Values.conf.maas.credentials.admin_username }} --password={{ .Values.conf.maas.credentials.admin_password }} --email={{ .Values.conf.maas.credentials.admin_email }} || true
+maas-region createadmin --username=${ADMIN_USERNAME} --password=${ADMIN_PASSWORD} --email=${ADMIN_EMAIL} || true
