@@ -19,39 +19,48 @@
 dependencies:
   rack_controller:
     jobs:
-    - maas-db-sync
+      - maas-db-sync
     services:
-    - maas_region_ui
+      - service: maas_region_ui
+        endpoint: internal
   region_controller:
     jobs:
-    - maas-db-sync
-    - maas-bootstrap-admin-user
+      - maas-db-sync
+      - maas-bootstrap-admin-user
     services:
-    - maas_db
+      - service: maas_db
+        endpoint: internal
   db_init:
     services:
-    - maas_db
+      - service: maas_db
+        endpoint: internal
   db_sync:
     jobs:
-    - maas-db-init
+      - maas-db-init
   bootstrap_admin_user:
     jobs:
-    - maas-db-sync
+      - maas-db-sync
     services:
-    - maas_region_ui
-    - maas_db
+      - service: maas_region_ui
+        endpoint: internal
+      - service: maas_db
+        endpoint: internal
   import_resources:
     jobs:
-    - maas-db-sync
+      - maas-db-sync
     services:
-    - maas_region_ui
-    - maas_db
+      - service: maas_region_ui
+        endpoint: internal
+      - service: maas_db
+        endpoint: internal
   export_api_key:
     jobs:
-    - maas-db-sync
+      - maas-db-sync
     services:
-    - maas_region_ui
-    - maas_db
+      - service: maas_region_ui
+        endpoint: internal
+      - service: maas_db
+        endpoint: internal
 
 
 images:
