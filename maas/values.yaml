@@ -26,7 +26,6 @@ dependencies:
   region_controller:
     jobs:
       - maas-db-sync
-      - maas-bootstrap-admin-user
     services:
       - service: maas_db
         endpoint: internal
