@@ -68,3 +68,5 @@ data:
 {{- if .Values.conf.maas.append -}}
 {{ .Values.conf.maas.append | indent 4 }}
 {{- end }}
+  nsswitch.conf:
+{{ tuple "etc/_nsswitch.conf.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}

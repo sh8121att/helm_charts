@@ -74,6 +74,10 @@ spec:
           mountPath: /tmp/start.sh
           subPath: start.sh
           readOnly: true
+        - name: maas-etc
+          mountPath: /etc/nsswitch.conf
+          subPath: nsswitch.conf
+          readOnly: true
 {{- if $mounts_maas_region.volumeMounts }}{{ toYaml $mounts_maas_region.volumeMounts | indent 12 }}{{ end }}
       volumes:
         - name: maas-etc
