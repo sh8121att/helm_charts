@@ -122,7 +122,7 @@ conf:
       use_external_only: 'false'
       ntp_servers: null
     dns:
-      require_dnssec: 'false'
+      require_dnssec: 'no'
       # These are upstream servers
       dns_servers: null
     proxy:
