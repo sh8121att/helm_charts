@@ -81,4 +81,8 @@ spec:
           configMap:
             name: maas-bin
             defaultMode: 0555
+        - name: maas-etc
+          configMap:
+            name: maas-etc
+            defaultMode: 0444
 {{ if $mounts_maas_rack.volumes }}{{ toYaml $mounts_maas_rack.volumes | indent 8 }}{{ end }}
