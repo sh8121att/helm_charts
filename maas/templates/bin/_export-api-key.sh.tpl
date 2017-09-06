@@ -60,7 +60,7 @@ EOS
         if [ ! -z $(echo $result | grep 201) ]; then
             echo 'Secret created'
             break
-        elseif [ ! -z $(echo $result | grep 409) ]; then
+        elif [ ! -z $(echo $result | grep 409) ]; then
             echo 'Secret exists, clearing before trying again'
             clear_secret
         else

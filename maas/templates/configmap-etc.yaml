@@ -70,3 +70,5 @@ data:
 {{- end }}
   nsswitch.conf: |
 {{ tuple "etc/_nsswitch.conf.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
+  register-rack-controller.service: |
+{{ tuple "etc/_register-rack-controller.service.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}

@@ -71,6 +71,10 @@ spec:
               mountPath: /usr/local/bin/register-rack-controller.sh
               subPath: register-rack-controller.sh
               readOnly: true
+            - name: maas-etc
+              mountPath: /lib/systemd/system/register-rack-controller.service
+              subPath: register-rack-controller.service
+              readOnly: true
 {{ if $mounts_maas_rack.volumeMounts }}{{ toYaml $mounts_maas_rack.volumeMounts | indent 12 }}{{ end }}
       volumes:
         - name: maas-bin
