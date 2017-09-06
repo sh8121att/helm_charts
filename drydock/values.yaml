@@ -112,6 +112,7 @@ dependencies:
 
 
 endpoints:
+  cluster_domain_suffix: cluster.local
   identity:
     name: ucp-keystone
     auth:

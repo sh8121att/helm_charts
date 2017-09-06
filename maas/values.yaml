@@ -20,16 +20,16 @@ dependencies:
   rack_controller:
     jobs:
     - maas-db-sync
-    service:
-    - maas-region-ui
+    services:
+    - maas_region_ui
   region_controller:
     jobs:
     - maas-db-sync
     - maas-bootstrap-admin-user
-    service:
+    services:
     - maas_db
   db_init:
-    service:
+    services:
     - maas_db
   db_sync:
     jobs:
@@ -37,20 +37,20 @@ dependencies:
   bootstrap_admin_user:
     jobs:
     - maas-db-sync
-    service:
-    - maas-region-ui
+    services:
+    - maas_region_ui
     - maas_db
   import_resources:
     jobs:
     - maas-db-sync
-    service:
-    - maas-region-ui
+    services:
+    - maas_region_ui
     - maas_db
   export_api_key:
     jobs:
     - maas-db-sync
-    service:
-    - maas-region-ui
+    services:
+    - maas_region_ui
     - maas_db
 
 
@@ -221,6 +221,7 @@ pod:
           cpu: "2000m"
 
 endpoints:
+  cluster_domain_suffix: cluster.local
   maas_db:
     auth:
       admin:
