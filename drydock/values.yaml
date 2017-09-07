@@ -112,6 +112,7 @@ dependencies:
 
 
 endpoints:
+  cluster_domain_suffix: cluster.local
   identity:
     name: ucp-keystone
     auth:
@@ -133,6 +134,8 @@ endpoints:
     hosts:
       default: keystone-api
       public: keystone
+    host_fqdn_override:
+      default: null
     path:
       default: /v3
     scheme:
@@ -153,6 +156,8 @@ endpoints:
       default: /api/v1.0
     scheme:
       default: http
+    host_fqdn_override:
+      default: null
 
 secrets:
   identity:

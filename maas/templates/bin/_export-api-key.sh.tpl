@@ -16,6 +16,16 @@
 
 set -ex
 
+function clear_secret {
+    wget \
+        --server-response \
+        --ca-certificate=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
+        --header='Content-Type: application/json' \
+        --header="Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
+        --method=DELETE \
+        https://kubernetes.default.svc.cluster.local/api/v1/namespaces/${SECRET_NAMESPACE}/secrets/${SECRET_NAME}
+}
+
 function post_secret {
     wget \
         --server-response \
@@ -24,11 +34,11 @@ function post_secret {
         --header="Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
         --method=POST \
         --body-file=/tmp/secret.json \
-        https://kubernetes.default.svc.cluster.local/api/v1/namespaces/{{ .Values.conf.maas.credentials.secret.namespace }}/secrets \
+        https://kubernetes.default.svc.cluster.local/api/v1/namespaces/${SECRET_NAMESPACE}/secrets \
         2>&1 | grep -E "HTTP/1.1 (201 Created|409 Conflict)"
 }
 
-KEY=$(maas-region apikey --username={{ .Values.conf.maas.credentials.admin_username }})
+KEY=$(maas-region apikey --username=${ADMIN_USERNAME})
 
 if [ "x$KEY" != "x" ]; then
     ENCODED_KEY=$(echo -n $KEY | base64 -w 0)
@@ -38,7 +48,7 @@ if [ "x$KEY" != "x" ]; then
   "kind": "Secret",
   "type": "Opaque",
   "metadata": {
-    "name": "{{ .Values.conf.maas.credentials.secret.name }}"
+    "name": "${SECRET_NAME}"
   },
   "data": {
     "token": "$ENCODED_KEY"
@@ -46,11 +56,16 @@ if [ "x$KEY" != "x" ]; then
 }
 EOS
     while true; do
-        if [ "x$(post_secret)" != "x" ]; then
-            echo 'Secret created or exists'
+        result=$(post_secret)
+        if [ ! -z "$(echo $result | grep 201)" ]; then
+            echo 'Secret created'
             break
+        elif [ ! -z "$(echo $result | grep 409)" ]; then
+            echo 'Secret exists, clearing before trying again'
+            clear_secret
+        else
+          echo Secret creation failed
         fi
-        echo Secret creation failed
         sleep 15
     done
 else

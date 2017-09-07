@@ -1,16 +1,18 @@
-# Copyright 2017 The Openstack-Helm Authors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+{{/*
+Copyright 2017 The Openstack-Helm Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/}}
 
 {{- $envAll := . }}
 {{- $dependencies := .Values.dependencies.region_controller }}
@@ -49,6 +51,8 @@ spec:
             port: {{ .Values.network.port.region_container }}
         securityContext:
           privileged: true
+        command:
+          - /tmp/start.sh
         volumeMounts:
         - name: maas-region-secret
           mountPath: /var/lib/maas/secret
@@ -65,6 +69,14 @@ spec:
         - name: maas-etc
           mountPath: /etc/maas/preseeds/curtin_userdata
           subPath: curtin_userdata
+          readOnly: true
+        - name: maas-bin
+          mountPath: /tmp/start.sh
+          subPath: start.sh
+          readOnly: true
+        - name: maas-etc
+          mountPath: /etc/nsswitch.conf
+          subPath: nsswitch.conf
           readOnly: true
 {{- if $mounts_maas_region.volumeMounts }}{{ toYaml $mounts_maas_region.volumeMounts | indent 12 }}{{ end }}
       volumes:

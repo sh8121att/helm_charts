@@ -18,15 +18,15 @@ set -ex
 
 function check_for_download {
 
-    TIMEOUT={{ .Values.jobs.import_boot_resources.timeout }}
-    while [[ ${TIMEOUT} -gt 0 ]]; do
-        if maas {{ .Values.conf.maas.credentials.admin_username }} boot-resources is-importing | grep -q 'true';
+    while [[ ${JOB_TIMEOUT} -gt 0 ]]; do
+        if maas ${ADMIN_USERNAME} boot-resources is-importing | grep -q 'true';
         then
             echo -e '\nBoot resources currently importing\n'
-            let TIMEOUT-={{ .Values.jobs.import_boot_resources.retry_timer }}
-            sleep {{ .Values.jobs.import_boot_resources.retry_timer }}
+            let TIMEOUT-=${RETRY_TIMER}
+            sleep ${RETRY_TIMER}
         else
             echo 'Boot resources have completed importing'
+            # TODO(sthussey) Need to check synced images exist - could be a import failure
             exit 0
         fi
     done
@@ -34,11 +34,30 @@ function check_for_download {
 
 }
 
-KEY=$(maas-region apikey --username={{ .Values.conf.maas.credentials.admin_username }})
-maas login {{ .Values.conf.maas.credentials.admin_username }} {{ tuple "maas_region_ui" "default" "region_ui" . | include "helm-toolkit.endpoints.keystone_endpoint_uri_lookup" }} $KEY
+function configure_proxy {
+  maas ${ADMIN_USERNAME} maas set-config name=enable_http_proxy value=${MAAS_PROXY_ENABLED}
+  maas ${ADMIN_USERNAME} maas set-config name=http_proxy value=${MAAS_PROXY_SERVER}
+}
+
+function configure_ntp {
+  maas ${ADMIN_USERNAME} maas set-config name=ntp_servers value=${MAAS_NTP_SERVERS}
+  maas ${ADMIN_USERNAME} maas set-config name=ntp_external_only value=${MAAS_NTP_EXTERNAL_ONLY}
+}
+
+function configure_dns {
+  maas ${ADMIN_USERNAME} maas set-config name=dnssec_validation value=${MAAS_DNS_DNSSEC_REQUIRED}
+  maas ${ADMIN_USERNAME} maas set-config name=upstream_dns value=${MAAS_DNS_SERVERS}
+}
+
+KEY=$(maas-region apikey --username=${ADMIN_USERNAME})
+maas login ${ADMIN_USERNAME} ${MAAS_ENDPOINT} $KEY
+
+configure_proxy
+configure_ntp
+configure_dns
 
 # make call to import images
-maas {{ .Values.conf.maas.credentials.admin_username }} boot-resources import
+maas ${ADMIN_USERNAME} boot-resources import
 # see if we can find > 0 images
-sleep {{ .Values.jobs.import_boot_resources.retry_timer }}
+sleep ${RETRY_TIMER}
 check_for_download
