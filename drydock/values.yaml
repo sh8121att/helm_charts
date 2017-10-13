@@ -16,7 +16,7 @@
 # This file provides defaults for drydock
 
 replicas:
-  drydock: 1
+  drydock: 2
 
 labels:
   node_selector_key: ucp-control-plane
@@ -28,15 +28,14 @@ images:
   ks_user: docker.io/kolla/ubuntu-source-kolla-toolbox:3.0.3
   ks_service: docker.io/kolla/ubuntu-source-kolla-toolbox:3.0.3
   ks_endpoints: docker.io/kolla/ubuntu-source-kolla-toolbox:3.0.3
+  drydock_db_init: docker.io/postgres:9.5
+  drydock_db_sync: quay.io/attcomdev/drydock:1.0.1
   pull_policy: "IfNotPresent"
 
 network:
-  drydock:
-    name: drydock-api
-    port: 9000
+  api:
     node_port:
       enabled: true
-      port: 31900
 
 pod:
   lifecycle:
@@ -78,43 +77,75 @@ pod:
         requests:
           memory: "128Mi"
           cpu: "100m"
+      drydock_db_sync:
+        limits:
+          memory: "128Mi"
+          cpu: "100m"
+        requests:
+          memory: "128Mi"
+          cpu: "100m"
+      drydock_db_init:
+        limits:
+          memory: "128Mi"
+          cpu: "100m"
+        requests:
+          memory: "128Mi"
+          cpu: "100m"
 
 manifests:
   job_ks_service: true
   job_ks_user: true
   job_ks_endpoints: true
+  job_drydock_db_init: true
+  job_drydock_db_sync: true
   secret_keystone: true
+  configmap_etc: true
+  configmap_bin: true
+  service_drydock: true
+  deployment_drydock: true
 
 dependencies:
+  db_init:
+    services:
+      - service: postgresql
+        endpoint: internal
+  db_sync:
+    services:
+      - service: postgresql
+        endpoint: internal
+    jobs:
+      - db_init
   ks_user:
     services:
-    - service: identity
-      endpoint: internal
+      - service: identity
+        endpoint: internal
   ks_service:
     services:
-    - service: identity
-      endpoint: internal
+      - service: identity
+        endpoint: internal
   ks_endpoints:
     jobs:
-    - drydock-ks-service
+      - drydock-ks-service
     services:
-    - service: identity
-      endpoint: internal
-  drydock:
+      - service: identity
+        endpoint: internal
+  api:
     jobs:
-    - drydock-ks-endpoints
-    - drydock-ks-user
-    - drydock-ks-endpoints
-    - export-api-key
+      - drydock-ks-endpoints
+      - drydock-ks-user
+      - drydock-ks-endpoints
+      - drydock-db-init
+      - drydock-db-sync
     services:
-    - service: identity
-      endpoint: internal
-
+      - service: identity
+        endpoint: internal
+      - service: postgresql
+        endpoint: internal
 
 endpoints:
   cluster_domain_suffix: cluster.local
   identity:
-    name: ucp-keystone
+    name: keystone
     auth:
       user:
         region_name: RegionOne
@@ -148,14 +179,33 @@ endpoints:
   physicalprovisioner:
     name: drydock
     hosts:
-      default: drydock-api.drydock
+      default: drydock-api
     port:
       api:
         default: 9000
+        nodeport: 31900
     path:
       default: /api/v1.0
     scheme:
       default: http
+    host_fqdn_override:
+      default: null
+  postgresql:
+    name: postgresql
+    auth:
+      admin:
+        username: postgres
+        password: password
+      user:
+        username: drydock
+        password: password
+    hosts:
+      default: postgresql
+    path: /drydock
+    scheme: postgresql+psycopg2
+    port:
+      postgresql:
+        default: 5432
     host_fqdn_override:
       default: null
 
@@ -168,44 +218,40 @@ secrets:
 conf:
   drydock:
     logging:
-      drydock_provisioner:
-        log_level: 'DEBUG'
-        global_logger_name: 'drydock'
-        oobdriver_logger_name: '${global_logger_name}.oobdriver'
-        nodedriver_logger_name: '${global_logger_name}.nodedriver'
-        control_logger_name: '${global_logger_name}.control'
+      log_level: 'DEBUG'
+      global_logger_name: 'drydock'
+      oobdriver_logger_name: '${global_logger_name}.oobdriver'
+      nodedriver_logger_name: '${global_logger_name}.nodedriver'
+      control_logger_name: '${global_logger_name}.control'
     maasdriver:
-      drydock_provisioner:
-        maas_api_key: 'override_this'
-        maas_api_url: 'override_this'
+      maas_api_key: 'override_this'
+      maas_api_url: 'override_this'
     plugins:
-      drydock_provisioner:
-        ingester:
+      ingester:
         - 'drydock_provisioner.ingester.plugins.yaml.YamlIngester'
-        oob_driver:
+      oob_driver:
         - 'drydock_provisioner.drivers.oob.pyghmi_driver.PyghmiDriver'
         - 'drydock_provisioner.drivers.oob.manual_driver.driver.ManualDriver'
-        node_driver: 'drydock_provisioner.drivers.node.maasdriver.driver.MaasNodeDriver'
-        network_driver: null
+      node_driver: 'drydock_provisioner.drivers.node.maasdriver.driver.MaasNodeDriver'
+      network_driver: null
     timeouts:
-      drydock_provisioner:
-        drydock_timeout: 5
-        create_network_template: 2
-        identify_node: 10
-        configure_hardware: 30
-        apply_node_networking: 5
-        apply_node_platform: 5
-        deploy_node: 45
+      drydock_timeout: 5
+      create_network_template: 2
+      identify_node: 10
+      configure_hardware: 30
+      apply_node_networking: 5
+      apply_node_platform: 5
+      deploy_node: 45
     bootdata:
-      drydock_provisioner:
-        prom_init: '/etc/drydock/bootdata/join.sh'
+      prom_init: '/etc/drydock/bootdata/join.sh'
     keystone_authtoken:
-      keystonemiddleware:
-        auth_token:
-          delay_auth_decision: true
-          auth_type: password
-          auth_section: keystone_authtoken
+      delay_auth_decision: true
+      auth_type: password
+      auth_section: keystone_authtoken
+    database:
+      database_connect_string: null
 # end drydock.conf
+
 # configs for api-paste.ini
   paste:
     override:
