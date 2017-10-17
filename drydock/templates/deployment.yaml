@@ -47,7 +47,7 @@ spec:
 {{ tuple $envAll $envAll.Values.pod.resources.api | include "helm-toolkit.snippets.kubernetes_resources" | indent 10 }}
           ports:
             - name: drydock-api
-              containerPort: {{ .Values.network.drydock.port }}
+              containerPort: {{ tuple "physicalprovisioner" "default" "api" . | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
           volumeMounts:
             - name: etc-drydock
               mountPath: /etc/drydock

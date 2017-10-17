@@ -34,7 +34,7 @@ images:
 
 network:
   api:
-    node_port:
+    nodeport:
       enabled: true
 
 pod:
@@ -114,7 +114,7 @@ dependencies:
       - service: postgresql
         endpoint: internal
     jobs:
-      - db_init
+      - drydock-db-init
   ks_user:
     services:
       - service: identity
@@ -214,6 +214,10 @@ secrets:
     admin: drydock-keystone-admin
     user: drydock-keystone-user
 
+database:
+  postgresql:
+    db_name: drydock
+
 # Settings for drydock.conf
 conf:
   drydock:
@@ -230,10 +234,9 @@ conf:
       ingester:
         - 'drydock_provisioner.ingester.plugins.yaml.YamlIngester'
       oob_driver:
-        - 'drydock_provisioner.drivers.oob.pyghmi_driver.PyghmiDriver'
+        - 'drydock_provisioner.drivers.oob.pyghmi_driver.driver.PyghmiDriver'
         - 'drydock_provisioner.drivers.oob.manual_driver.driver.ManualDriver'
       node_driver: 'drydock_provisioner.drivers.node.maasdriver.driver.MaasNodeDriver'
-      network_driver: null
     timeouts:
       drydock_timeout: 5
       create_network_template: 2

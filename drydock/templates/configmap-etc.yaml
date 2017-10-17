@@ -15,16 +15,14 @@
 {{- if .Values.manifests.configmap_etc }}
 {{- $envAll := . }}
 
-{{- include "drydock.conf.drydock_values_skeleton" .Values.conf.drydock | trunc 0 -}}
-
 # Render Database connection string if it is not explicitly configured
 
 {{- if empty .Values.conf.drydock.database.database_connect_string -}}
-{{- tuple "postgresql" "internal" "user" "postgresql" . | include "helm-toolkit.endpoints.authenticated_endpoint_uri_lookup" | set .Values.conf.drydock.database.database_connect_string | quote | trunc 0 -}}
+{{- tuple "postgresql" "internal" "user" "postgresql" . | include "helm-toolkit.endpoints.authenticated_endpoint_uri_lookup" | set .Values.conf.drydock.database "database_connect_string" | quote | trunc 0 -}}
 {{- end -}}
 
-{{- if empty .Values.conf.drydock.keystone_authtoken.auth_token.auth_uri -}}
-{{- tuple "identity" "internal" "api" . | include "helm-toolkit.endpoints.keystone_endpoint_uri_lookup" | set .Values.conf.drydock.keystone_authtoken.auth_token "auth_uri" | quote | trunc 0 -}}
+{{- if empty .Values.conf.drydock.keystone_authtoken.auth_uri -}}
+{{- tuple "identity" "internal" "api" . | include "helm-toolkit.endpoints.keystone_endpoint_uri_lookup" | set .Values.conf.drydock.keystone_authtoken "auth_uri" | quote | trunc 0 -}}
 {{- end -}}
 
 # FIXME(sh8121att) fix for broken keystonemiddleware oslo config gen in newton - will remove in future

@@ -18,4 +18,4 @@ limitations under the License.
 
 set -ex
 
-alembic upgrade
+alembic upgrade head

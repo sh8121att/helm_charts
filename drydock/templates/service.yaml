@@ -20,13 +20,13 @@ metadata:
 spec:
   ports:
   - name: drydock-api
-    port: {{ tuple "physicalprovisioner" "api" "default" . | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
-    {{ if .Values.network.drydock.node_port.enabled }}
-    nodePort: {{ tuple "physicalprovisioner" "api" "nodeport" . | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+    port: {{ tuple "physicalprovisioner" "default" "api" . | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+    {{ if .Values.network.api.nodeport.enabled }}
+    nodePort: {{ tuple "physicalprovisioner" "nodeport" "api" . | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
     {{ end }}
   selector:
-{{ tuple $envAll "drydock" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 4 }}
-  {{ if .Values.network.api.node_port.enabled }}
+{{ tuple . "drydock" "api" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 4 }}
+  {{ if .Values.network.api.nodeport.enabled }}
   type: NodePort
   {{ end }}
 ...
