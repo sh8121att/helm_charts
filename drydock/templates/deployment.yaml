@@ -1,4 +1,5 @@
-{{/* # Copyright 2017 The Openstack-Helm Authors.
+{{/*
+# Copyright (c) 2017 AT&T Intellectual Property. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -63,9 +64,6 @@ spec:
               subPath: policy.yaml
               mountPath: /etc/drydock/policy.yaml
               readOnly: true
-            - name: drydock-bootdata
-              mountPath: /etc/drydock/bootdata
-              readOnly: true
       volumes:
         - name: etc-drydock
           emptyDir: {}
@@ -73,9 +71,5 @@ spec:
           configMap:
             name: drydock-etc
             defaultMode: 0444
-        - name: drydock-bootdata
-          configMap:
-            name: promenade-join-sh
-            defaultMode: 0555
 ...
 {{- end }}
